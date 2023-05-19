@@ -22,9 +22,12 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#ifndef _WIN32
 #include <grp.h>
-#include <math.h>
 #include <pwd.h>
+#endif
+#include <math.h>
+
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -931,6 +934,7 @@ do_fprintf (struct format_val *dest,
           checked_print_quoted (dest, segment->text, filesystem_type (stat_buf, pathname));
           break;
         case 'g':               /* group name */
+#ifndef _WIN32
           /* trusted */
           /* (well, the actual group is selected by the user but
            * its name was selected by the system administrator)
@@ -947,13 +951,16 @@ do_fprintf (struct format_val *dest,
               }
           }
           FALLTHROUGH; /*...sometimes, so 'G' case.*/
-
+#endif
         case 'G':               /* GID number */
+#ifndef _WIN32        
           /* UNTRUSTED, probably unexploitable */
           checked_fprintf (dest, segment->text,
                            human_readable ((uintmax_t) stat_buf->st_gid, hbuf,
                                            human_ceiling, 1, 1));
+#endif
           break;
+
         case 'h':               /* leading directories part of path */
           /* sanitised */
           {
@@ -1139,6 +1146,7 @@ do_fprintf (struct format_val *dest,
           break;
 
         case 'u':               /* user name */
+#ifndef _WIN32        
           /* trusted */
           /* (well, the actual user is selected by the user on systems
            * where chown is not restricted, but the user name was
@@ -1156,12 +1164,14 @@ do_fprintf (struct format_val *dest,
               }
           }
           FALLTHROUGH; /* .. to case U */
-
+#endif
         case 'U':               /* UID number */
+#ifndef _WIN32
           /* UNTRUSTED, probably unexploitable */
           checked_fprintf (dest, segment->text,
                            human_readable ((uintmax_t) stat_buf->st_uid, hbuf,
                                            human_ceiling, 1, 1));
+#endif          
           break;
 
           /* %Y: type of file system entry like `ls -l`:

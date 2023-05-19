@@ -24,8 +24,13 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #ifndef _POSIX_SOURCE
-# include <sys/param.h>
+#include <sys/param.h>
+#endif
+#else
+#define _POSIX_ARG_MAX 32767
+#define ARG_MAX 32767
 #endif
 #include <unistd.h>
 #include <wchar.h>

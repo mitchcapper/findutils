@@ -24,9 +24,14 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifndef _WIN32
 #include <grp.h>
-#include <math.h>
 #include <pwd.h>
+#else
+# define S_IFBLK 0
+#endif
+#include <math.h>
+
 #include <selinux/selinux.h>
 #include <stdarg.h>
 #include <sys/stat.h>
@@ -651,17 +656,25 @@ pred_newerXY (const char *pathname, struct stat *stat_buf, struct predicate *pre
 bool
 pred_nogroup (const char *pathname, struct stat *stat_buf, struct predicate *pred_ptr)
 {
+#ifndef _WIN32
   (void) pathname;
   (void) pred_ptr;
   return getgrgid (stat_buf->st_gid) == NULL;
+#else
+  return true;
+#endif  
 }
 
 bool
 pred_nouser (const char *pathname, struct stat *stat_buf, struct predicate *pred_ptr)
 {
+#ifndef _WIN32  
   (void) pathname;
   (void) pred_ptr;
   return getpwuid (stat_buf->st_uid) == NULL;
+#else
+  return true;
+#endif    
 }
 
 

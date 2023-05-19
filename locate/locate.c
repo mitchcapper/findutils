@@ -66,7 +66,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#ifndef _WIN32
 #include <grp.h>                /* for setgroups() */
+#endif
 #include <regex.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -1414,6 +1416,7 @@ static struct option const longopts[] =
 static int
 drop_privs (void)
 {
+#ifndef _WIN32  
   const char * what = "failed";
   const uid_t orig_euid = geteuid ();
   const uid_t uid       = getuid ();
@@ -1489,7 +1492,11 @@ drop_privs (void)
   error (EXIT_FAILURE, errno, "%s",
          quotearg_n_style (0, locale_quoting_style, what));
   abort ();
+  #ifndef _WIN32
   kill (0, SIGKILL);
+  #else
+  kill (0, SIGBREAK);
+  #endif
   _exit (1);
   /*NOTREACHED*/
   /* ... we hope. */
@@ -1497,6 +1504,7 @@ drop_privs (void)
     {
       /* deliberate infinite loop */
     }
+    #endif
 }
 
 static int
@@ -1510,11 +1518,13 @@ opendb (const char *name)
   if (fd >= 0)
     {
       /* Make sure it won't survive an exec */
+#ifndef _WIN32
       if (0 != fcntl (fd, F_SETFD, FD_CLOEXEC))
         {
           close (fd);
           fd = -1;
         }
+#endif        
     }
   return fd;
 }
