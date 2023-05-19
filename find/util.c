@@ -196,8 +196,8 @@ Tests (N can be +N or -N or N):\n\
 Actions:\n\
       -delete -print0 -printf FORMAT -fprintf FILE FORMAT -print \n\
       -fprint0 FILE -fprint FILE -ls -fls FILE -prune -quit\n\
-      -exec COMMAND ; -exec COMMAND {} + -ok COMMAND ;\n\
-      -execdir COMMAND ; -execdir COMMAND {} + -okdir COMMAND ;\n"));
+      -exec COMMAND \";\" -exec COMMAND {} + -ok COMMAND \";\"\n\
+      -execdir COMMAND \";\" -execdir COMMAND {} + -okdir COMMAND \";\"\n"));
 
   HTL (_("\n\
 Other common options:\n"));

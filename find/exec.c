@@ -307,10 +307,49 @@ launch (struct buildcmd_control *ctl, void *usercontext, int argc, char **argv)
   if (first_time)
     {
       first_time = 0;
+#ifndef _WIN32
       signal (SIGCHLD, SIG_DFL);
+#endif
     }
+#ifdef _WIN32
+      if (bc_args_exceed_testing_limit (argv))
+	      errno = E2BIG;
+      else
+      {
+        int fd_stdin = dup(STDIN_FILENO);//backup stdin incase prep changes it
+        prep_child_for_exec (execp->close_stdin, execp->wd_for_exec);
+        if (fd_leak_check_is_enabled ())
+          {
+            complain_about_leaky_fds ();
+          }
+        errno = execute(argv[0],argv[0],argv,NULL,false,false,false,false,true,false,NULL);
+        dup2(fd_stdin,STDIN_FILENO);//restore stdin
+        close(fd_stdin);
+      }
 
-  child_pid = fork ();
+if (errno != 0){
+		 if (E2BIG == errno)
+	      {
+          state.exit_status = EXIT_FAILURE;
+		return 0; /* Failure; caller should pass fewer args */
+	      }
+	    else if (ENOENT == errno)
+	      {
+          state.exit_status = EXIT_FAILURE;
+		return 0;
+	      }
+	    else
+	      {
+          state.exit_status = EXIT_FAILURE;
+		return 0;
+	      }
+	}else
+        return 1;			/* OK */
+
+
+#else
+  child_pid= fork ();
+#endif
   if (child_pid == -1)
     error (EXIT_FAILURE, errno, _("cannot fork"));
   if (child_pid == 0)
