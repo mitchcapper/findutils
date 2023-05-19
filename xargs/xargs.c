@@ -46,10 +46,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <execute.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <wchar.h>
+#ifdef _WIN32
+#define ARG_MAX 4096
+#endif
 
 /* gnulib headers. */
 #include "closein.h"
@@ -822,7 +826,9 @@ main (int argc, char **argv)
   bc_state.argbuf = xmalloc (bc_ctl.arg_max + 1);
 
   /* Make sure to listen for the kids.  */
+#ifndef _WIN32
   signal (SIGCHLD, SIG_DFL);
+#endif
 
   if (!bc_ctl.replace_pat)
     {
@@ -1243,7 +1249,11 @@ prep_child_for_exec (void)
   if (!keep_stdin || open_tty)
     {
       int fd;
+	  #ifndef _WIN32
       const char *inputfile = open_tty ? "/dev/tty" : "/dev/null";
+	  #else
+	  const char *inputfile = open_tty ? "\\\\.\\CON" : "NUL";
+	  #endif
 
       close (0);
       if ((fd = open (inputfile, O_RDONLY)) < 0)
@@ -1288,7 +1298,11 @@ static int
 xargs_do_exec (struct buildcmd_control *ctl, void *usercontext, int argc, char **argv)
 {
   pid_t child;
+  #ifndef _WIN32
   int fd[2];
+#else
+	int fd[1];
+#endif
   int buf;
   ptrdiff_t r;
 
@@ -1319,7 +1333,8 @@ xargs_do_exec (struct buildcmd_control *ctl, void *usercontext, int argc, char *
          ./xargs -P 200 -n 20  sh -c 'echo "$@"; sleep $((1 + $RANDOM % 5))' sleeper
       */
       wait_for_proc (false, 0u);
-
+	  child=0;
+#ifndef _WIN32
       if (pipe (fd))
         error (EXIT_FAILURE, errno, _("could not create pipe before fork"));
       fcntl (fd[1], F_SETFD, FD_CLOEXEC);
@@ -1328,7 +1343,36 @@ xargs_do_exec (struct buildcmd_control *ctl, void *usercontext, int argc, char *
          try again.  */
       while ((child = fork ()) < 0 && errno == EAGAIN && procs_executing)
         wait_for_proc (false, 1u);
+#else
+	//this code likely would work for all platforms
 
+	if (bc_args_exceed_testing_limit (argv))//this works but single threaded
+	      errno = E2BIG;
+	else{
+		int fd_stdin = dup(STDIN_FILENO);//backup stdin incase prep changes it
+		prep_child_for_exec();
+		errno = execute(argv[0],argv[0],argv,NULL,false,false,false,false,true,false,NULL);
+		dup2(fd_stdin,STDIN_FILENO);//restore stdin
+		close(fd_stdin);
+	}
+
+	if (errno != 0){
+		 if (E2BIG == errno)
+	      {
+		return 0; /* Failure; caller should pass fewer args */
+	      }
+	    else if (ENOENT == errno)
+	      {
+		exit (XARGS_EXIT_COMMAND_NOT_FOUND); /* command cannot be found */
+	      }
+	    else
+	      {
+		exit (XARGS_EXIT_COMMAND_CANNOT_BE_RUN); /* command cannot be run */
+	      }
+	}else
+		return 1;
+
+#endif
       switch (child)
         {
         case -1:
@@ -1456,6 +1500,10 @@ static unsigned int
 add_proc (pid_t pid)
 {
   unsigned int i, j;
+#ifdef  _WIN32//win is always one at a time we dont want to increment the running count here as we don't use the reap/decrement counter in win32
+  procs_executed = true;
+  return 0;
+#endif //  _WIN32
 
   /* Find an empty slot.  */
   for (i = 0; i < pids_alloc && pids[i]; i++)
@@ -1490,6 +1538,7 @@ static void
 wait_for_proc (bool all, unsigned int minreap)
 {
   unsigned int reaped = 0;
+#ifndef _WIN32  
   int deferred_exit_status = 0;
 
   while (procs_executing)
@@ -1612,6 +1661,7 @@ wait_for_proc (bool all, unsigned int minreap)
       child_error = deferred_exit_status > child_error ? deferred_exit_status : child_error;
       exit (child_error);
     }
+#endif
 }
 
 /* Wait for all child processes to finish.  */
