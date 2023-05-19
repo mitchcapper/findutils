@@ -23,9 +23,12 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifndef _WIN32
 #include <grp.h>
-#include <math.h>
 #include <pwd.h>
+#endif
+#include <math.h>
+
 #include <regex.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -1139,6 +1142,7 @@ parse_gid (const struct parser_table* entry, char **argv, int *arg_ptr)
 static bool
 parse_group (const struct parser_table* entry, char **argv, int *arg_ptr)
 {
+  #ifndef _WIN32
   const char *groupname;
 
   if (collect_arg (argv, arg_ptr, &groupname))
@@ -1170,6 +1174,9 @@ parse_group (const struct parser_table* entry, char **argv, int *arg_ptr)
       return true;
     }
   return false;
+  #else
+  return true;
+  #endif;
 }
 
 static bool
@@ -2380,6 +2387,7 @@ parse_used (const struct parser_table* entry, char **argv, int *arg_ptr)
 static bool
 parse_user (const struct parser_table* entry, char **argv, int *arg_ptr)
 {
+  #ifndef _WIN32
   const char *username;
 
   if (collect_arg (argv, arg_ptr, &username))
@@ -2411,6 +2419,9 @@ parse_user (const struct parser_table* entry, char **argv, int *arg_ptr)
       return true;
     }
   return false;
+  #else
+  return true;
+  #endif
 }
 
 static bool

@@ -31,7 +31,9 @@
 # include <sys/resource.h>
 #endif
 #include <unistd.h>
-
+#ifdef _WIN32
+#define _POSIX_OPEN_MAX 16
+#endif
 /* gnulib headers. */
 #include "cloexec.h"
 #include "dirent--.h"
@@ -113,9 +115,10 @@ get_max_fd (void)
   open_max = get_proc_max_fd ();
   if (open_max >= 0)
     return open_max;
-
+#ifndef _WIN32
   open_max = sysconf (_SC_OPEN_MAX);
   if (open_max == -1)
+#endif  
     open_max = _POSIX_OPEN_MAX; /* underestimate */
 
   /* We assume if RLIMIT_NOFILE is defined, all the related macros are, too. */

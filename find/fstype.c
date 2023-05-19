@@ -109,6 +109,7 @@ in_afs (char *path)
 static struct mount_entry *
 get_file_system_list (bool need_fs_type)
 {
+  #ifndef _WIN32
   /* Local cache for the mount list.  */
   static struct mount_entry *mount_list = NULL;
 
@@ -126,6 +127,9 @@ get_file_system_list (bool need_fs_type)
       has_fstype = need_fs_type;
     }
   return mount_list;
+  #else
+  return NULL;
+#endif  
 }
 
 /* Return a static string naming the type of file system that the file PATH,
@@ -156,6 +160,7 @@ filesystem_type (const struct stat *statp, const char *path)
 bool
 is_used_fs_type(const char *name)
 {
+  #ifndef _WIN32
   if (0 == strcmp("afs", name))
     {
       /* I guess AFS may not appear in /etc/mtab (or equivalent) but still be in use,
@@ -179,6 +184,7 @@ is_used_fs_type(const char *name)
           return true;
         }
     }
+#endif
   return false;
 }
 
@@ -270,6 +276,7 @@ file_system_type_uncached (const struct stat *statp, const char *path,
 dev_t *
 get_mounted_devices (size_t *n)
 {
+#ifndef _WIN32
   size_t alloc_size = 0u;
   size_t used = 0u;
   struct mount_entry *entries, *entry;
@@ -307,4 +314,7 @@ get_mounted_devices (size_t *n)
       *n = used;
     }
   return result;
+#else
+  return NULL;
+#endif  
 }
