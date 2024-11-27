@@ -1351,7 +1351,7 @@ xargs_do_exec (struct buildcmd_control *ctl, void *usercontext, int argc, char *
 	else{
 		int fd_stdin = dup(STDIN_FILENO);//backup stdin incase prep changes it
 		prep_child_for_exec();
-		errno = execute(argv[0],argv[0],argv,NULL,false,false,false,false,true,false,NULL);
+		errno = execute(argv[0],argv[0],argv,NULL,NULL,false,false,false,false,true,false,NULL);
 		dup2(fd_stdin,STDIN_FILENO);//restore stdin
 		close(fd_stdin);
 	}

@@ -322,7 +322,7 @@ launch (struct buildcmd_control *ctl, void *usercontext, int argc, char **argv)
           {
             complain_about_leaky_fds ();
           }
-        errno = execute(argv[0],argv[0],argv,NULL,false,false,false,false,true,false,NULL);
+        errno = execute(argv[0],argv[0],argv,NULL,NULL,false,false,false,false,true,false,NULL);
         dup2(fd_stdin,STDIN_FILENO);//restore stdin
         close(fd_stdin);
       }
